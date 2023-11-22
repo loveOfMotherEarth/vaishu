@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Pages Image Search</title>
+
+    <style>
+        body {
+            background-color: #1e1e1e;
+            color: #ffffff;
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        label {
+            color: #ffffff;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        input {
+            background-color: #2a2a2a;
+            color: #ffffff;
+            padding: 10px;
+            border: 1px solid #444;
+            border-radius: 6px;
+            margin-right: 10px;
+            width: 60%;
+            font-size: 1em;
+            transition: background-color 0.3s ease-in-out, border 0.3s ease-in-out;
+        }
+
+        input:hover, input:focus {
+            background-color: #333;
+            border: 1px solid #666;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: #ffffff;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s ease-in-out, transform 0.2s ease-in-out;
+        }
+
+        button:hover {
+            background-color:red;
+            transform: rotate(360deg);
+        }
+
+        #result {
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        img {
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        img:hover {
+            transform: scale(1.1);
+        }
+
+        #result > div {
+            text-align: center;
+        }
+
+        #result img {
+            max-width: 100%;
+            border-radius: 12px;
+            margin-bottom: 10px;
+        }
+
+        button.cancel {
+            background-color: #ff5252;
+            color: #ffffff;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s ease-in-out, transform 0.3s ease-in-out;
+        }
+
+        button.cancel:hover {
+            background-color: #ff0000;
+            transform: scale(1.05);
+        }
+
+        /* Dark mode enhancements */
+        p {
+            color: #ffffff;
+            background-color: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.2em;
+            transition: background-color 0.3s ease-in-out, transform 0.3s ease-in-out;
+        }
+
+        p:hover {
+            background-color: #333;
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <center><label for="filename">Terra's.Vaishu</label></center>
+    <br><br>
+    <input type="text" id="filename" placeholder="Vaishu Enter U R Attribute">
+    <button onclick="searchImage()">Search</button>
+<hr>
+    <div id="result">
+    
+    <p>U R Attributes like:</p>
+    
+    <p>Vaishu birthday<br><br>
+    Vaishu Smile<br><br>
+    
+    Vaishu blue dress<br><br>
+    Vaishu blue dress smile<br><br>
+    Vaishu Birthday Cake</p>
+    
+    </div>
+
+    <script>
+    const repositoryUrl = 'https://loveOfMotherEarth.github.io/vaishu/';
+    const apiEndpoint = 'https://api.github.com/repos/loveOfMotherEarth/vaishu/contents';
+    let currentImageIndex = 0; // Track the current index of displayed images
+    const imagesPerPage = 10; // Number of images to display per page
+    
+    async function getImageFileNames() {
+    try {
+    const response = await fetch(apiEndpoint);
+    const data = await response.json();
+    
+    const imageNames = data
+    .filter(item => item.type === 'file')
+    .map(item => item.name);
+    
+    return imageNames;
+    } catch (error) {
+    console.error('Error fetching file names:', error);
+    return [];
+    }
+    }
+    
+    async function displayThumbnail(image, resultContainer) {
+    const imgElement = document.createElement('img');
+    imgElement.src = `${repositoryUrl}/${image}`;
+    imgElement.alt = image;
+    imgElement.style.width = '100px';
+    imgElement.style.height = '100px';
+    
+    // Attach click event to open image in the same window
+    imgElement.addEventListener('click', () => displayFullImage(image, resultContainer));
+    
+    resultContainer.appendChild(imgElement);
+    }
+    
+    async function displayFullImage(image, resultContainer) {
+    const fullImageUrl = `${repositoryUrl}/${image}`;
+    
+    // Store the current set of images
+    const previousImages = Array.from(resultContainer.children);
+    
+    // Create elements for full image display
+    const fullImageContainer = document.createElement('div');
+    fullImageContainer.style.textAlign = 'center';
+    
+    const fullImageElement = document.createElement('img');
+    fullImageElement.src = fullImageUrl;
+    fullImageElement.alt = image;
+    
+    // Create minimize button to go back to the previous set of images
+    const minimizeButton = document.createElement('button');
+    minimizeButton.textContent = 'Minimize';
+    minimizeButton.addEventListener('click', () => minimizeImage(resultContainer, previousImages));
+    
+    // Append elements to the container
+    fullImageContainer.appendChild(fullImageElement);
+    fullImageContainer.appendChild(document.createElement('br')); // Add a line break
+    fullImageContainer.appendChild(minimizeButton);
+    
+    // Replace search results with full image display
+    resultContainer.innerHTML = '';
+    resultContainer.appendChild(fullImageContainer);
+    }
+    
+    function minimizeImage(resultContainer, previousImages) {
+    // Restore the previous set of images
+    resultContainer.innerHTML = '';
+    resultContainer.append(...previousImages);
+    }
+    
+    async function displayImages(images, resultContainer) {
+    const endIndex = Math.min(currentImageIndex + imagesPerPage, images.length);
+    
+    for (let i = currentImageIndex; i < endIndex; i++) {
+    displayThumbnail(images[i], resultContainer);
+    }
+    
+    currentImageIndex = endIndex;
+    
+    // Show "Load More" button if there are more images to display
+    if (currentImageIndex < images.length) {
+    const loadMoreButton = document.createElement('button');
+    loadMoreButton.textContent = 'Load More';
+    loadMoreButton.addEventListener('click', () => displayImages(images, resultContainer));
+    resultContainer.appendChild(loadMoreButton);
+    }
+    }
+    
+    async function searchImage() {
+    const filenameInput = document.getElementById('filename');
+    const filename = filenameInput.value.trim().toLowerCase();
+    
+    if (filename === '') {
+    alert('Please enter a file name.');
+    return;
+    }
+    
+    const imageNames = await getImageFileNames();
+    
+    const searchTerms = filename.split(' ');
+    const matchingImages = imageNames.filter(image =>
+    searchTerms.every(term => image.toLowerCase().includes(term))
+    );
+    
+    currentImageIndex = 0; // Reset current index when initiating a new search
+    const resultContainer = document.getElementById('result');
+    resultContainer.innerHTML = '';
+    
+    if (matchingImages.length > 0) {
+    displayImages(matchingImages, resultContainer);
+    } else {
+    resultContainer.innerHTML = 'vaishu U R Image Not Found In Microintel DATABASE';
+    }
+    }
+    </script>
+</body>
+</html>
+
